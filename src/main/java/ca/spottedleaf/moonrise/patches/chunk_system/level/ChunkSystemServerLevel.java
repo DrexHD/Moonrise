@@ -9,6 +9,7 @@ import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskSchedule
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import java.util.List;
 import java.util.function.Consumer;
@@ -57,7 +58,7 @@ public interface ChunkSystemServerLevel extends ChunkSystemLevel {
 
     public ReferenceList<ServerChunkCache.ChunkAndHolder> moonrise$getLoadedChunks();
 
-    public ReferenceList<ServerChunkCache.ChunkAndHolder> moonrise$getTickingChunks();
+    public ReferenceList<LevelChunk> moonrise$getTickingChunks();
 
     public ReferenceList<ServerChunkCache.ChunkAndHolder> moonrise$getEntityTickingChunks();
 }

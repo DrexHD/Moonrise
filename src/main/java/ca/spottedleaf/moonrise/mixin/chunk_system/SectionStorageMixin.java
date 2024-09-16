@@ -74,7 +74,7 @@ abstract class SectionStorageMixin implements ChunkSystemSectionStorage, AutoClo
      * @author Spottedleaf
      */
     @Overwrite
-    public void readColumn(final ChunkPos pos, final RegistryOps<Tag> ops, final CompoundTag data) {
+    private void unpackChunk(ChunkPos chunkPos) {
         throw new IllegalStateException("Only chunk system can load in state, offending class:" + this.getClass().getName());
     }
 
@@ -83,7 +83,7 @@ abstract class SectionStorageMixin implements ChunkSystemSectionStorage, AutoClo
      * @author Spottedleaf
      */
     @Redirect(
-            method = "writeColumn(Lnet/minecraft/world/level/ChunkPos;)V",
+            method = "writeChunk(Lnet/minecraft/world/level/ChunkPos;)V",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/world/level/chunk/storage/SimpleRegionStorage;write(Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/nbt/CompoundTag;)Ljava/util/concurrent/CompletableFuture;"

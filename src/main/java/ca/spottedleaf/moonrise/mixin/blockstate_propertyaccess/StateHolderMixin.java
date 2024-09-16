@@ -5,6 +5,7 @@ import ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.util.ZeroCollid
 import it.unimi.dsi.fastutil.objects.Reference2ObjectArrayMap;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -16,7 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 
 @Mixin(StateHolder.class)
 abstract class StateHolderMixin<O, S> implements PropertyAccessStateHolder {
@@ -126,8 +126,9 @@ abstract class StateHolderMixin<O, S> implements PropertyAccessStateHolder {
      * @author Spottedleaf
      */
     @Overwrite
-    public <T extends Comparable<T>> Optional<T> getOptionalValue(final Property<T> property) {
-        return property == null ? Optional.empty() : Optional.ofNullable(this.optimisedTable.get(this.tableIndex, property));
+    @Nullable
+    public <T extends Comparable<T>> T getNullableValue(final Property<T> property) {
+        return property == null ? null : this.optimisedTable.get(this.tableIndex, property);
     }
 
     /**

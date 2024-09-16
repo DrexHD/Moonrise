@@ -83,8 +83,8 @@ abstract class ServerLevelMixin extends Level implements ChunkSystemServerLevel,
     @Final
     private ServerChunkCache chunkSource;
 
-    protected ServerLevelMixin(WritableLevelData writableLevelData, ResourceKey<Level> resourceKey, RegistryAccess registryAccess, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean bl, boolean bl2, long l, int i) {
-        super(writableLevelData, resourceKey, registryAccess, holder, supplier, bl, bl2, l, i);
+    protected ServerLevelMixin(final WritableLevelData writableLevelData, final ResourceKey<Level> resourceKey, final RegistryAccess registryAccess, final Holder<DimensionType> holder, final boolean bl, final boolean bl2, final long l, final int i) {
+        super(writableLevelData, resourceKey, registryAccess, holder, bl, bl2, l, i);
     }
 
     @Unique
@@ -121,10 +121,13 @@ abstract class ServerLevelMixin extends Level implements ChunkSystemServerLevel,
     private static final ServerChunkCache.ChunkAndHolder[] EMPTY_CHUNK_AND_HOLDERS = new ServerChunkCache.ChunkAndHolder[0];
 
     @Unique
+    private static final LevelChunk[] EMPTY_CHUNK = new LevelChunk[0];
+
+    @Unique
     private final ReferenceList<ServerChunkCache.ChunkAndHolder> loadedChunks = new ReferenceList<>(EMPTY_CHUNK_AND_HOLDERS);
 
     @Unique
-    private final ReferenceList<ServerChunkCache.ChunkAndHolder> tickingChunks = new ReferenceList<>(EMPTY_CHUNK_AND_HOLDERS);
+    private final ReferenceList<LevelChunk> tickingChunks = new ReferenceList<>(EMPTY_CHUNK);
 
     @Unique
     private final ReferenceList<ServerChunkCache.ChunkAndHolder> entityTickingChunks = new ReferenceList<>(EMPTY_CHUNK_AND_HOLDERS);
@@ -336,7 +339,7 @@ abstract class ServerLevelMixin extends Level implements ChunkSystemServerLevel,
     }
 
     @Override
-    public final ReferenceList<ServerChunkCache.ChunkAndHolder> moonrise$getTickingChunks() {
+    public final ReferenceList<LevelChunk> moonrise$getTickingChunks() {
         return this.tickingChunks;
     }
 

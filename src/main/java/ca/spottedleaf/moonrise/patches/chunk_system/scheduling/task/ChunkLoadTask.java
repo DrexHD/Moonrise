@@ -11,6 +11,7 @@ import ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO;
 import ca.spottedleaf.moonrise.patches.chunk_system.level.poi.PoiChunk;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
+import ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -19,7 +20,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.UpgradeData;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.ChunkSerializer;
+import net.minecraft.world.level.chunk.storage.SerializableChunkData;
 import net.minecraft.world.level.levelgen.blending.BlendingData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -318,7 +319,7 @@ public final class ChunkLoadTask extends ChunkProgressionTask {
         private ProtoChunk getEmptyChunk() {
             return new ProtoChunk(
                 new ChunkPos(this.chunkX, this.chunkZ), UpgradeData.EMPTY, this.world,
-                this.world.registryAccess().registryOrThrow(Registries.BIOME), (BlendingData)null
+                this.world.registryAccess().lookupOrThrow(Registries.BIOME), (BlendingData)null
             );
         }
 
@@ -346,9 +347,16 @@ public final class ChunkLoadTask extends ChunkProgressionTask {
 
         private TaskResult<ChunkAccess, Throwable> deserialize(final CompoundTag data) {
             try {
-                final ChunkAccess deserialized = ChunkSerializer.read(
-                        this.world, this.world.getPoiManager(), this.world.getChunkSource().chunkMap.storageInfo(), new ChunkPos(this.chunkX, this.chunkZ), data
+                SerializableChunkData chunkData = SerializableChunkData.parse(this.world, this.world.registryAccess(), data);
+                final ChunkAccess deserialized = chunkData.read(
+                        this.world, this.world.getPoiManager(), this.world.getChunkSource().chunkMap.storageInfo(), new ChunkPos(this.chunkX, this.chunkZ)
                 );
+                /*
+                  Loads our light data into the returned chunk object from the tag.
+                  TODO this needs to be checked on update to account for format changes
+                 */
+                SaveUtil.loadLightHook(this.world, chunkData.chunkPos(), data, deserialized);
+
                 return new TaskResult<>(deserialized, null);
             } catch (final Throwable thr2) {
                 LOGGER.error("Failed to parse chunk data for task: " + this.toString() + ", chunk data will be lost", thr2);

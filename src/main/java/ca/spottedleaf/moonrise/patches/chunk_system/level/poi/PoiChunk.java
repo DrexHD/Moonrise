@@ -133,13 +133,8 @@ public final class PoiChunk {
                 continue;
             }
 
-            final long key = CoordinateUtils.getChunkSectionKey(chunkX, sectionY, chunkZ);
-            // codecs are honestly such a fucking disaster. What the fuck is this trash?
-            final Codec<PoiSection> codec = PoiSection.codec(() -> {
-                poiManager.setDirty(key);
-            });
-
-            final DataResult<Tag> serializedResult = codec.encodeStart(registryOps, section);
+            final PoiSection.Packed packed = section.pack();
+            final DataResult<Tag> serializedResult = PoiSection.Packed.CODEC.encodeStart(registryOps, packed);
             final int finalSectionY = sectionY;
             final Tag serialized = serializedResult.resultOrPartial((final String description) -> {
                 LOGGER.error("Failed to serialize poi chunk for world: " + WorldUtil.getWorldName(world) + ", chunk: (" + chunkX + "," + finalSectionY + "," + chunkZ + "); description: " + description);
@@ -184,15 +179,11 @@ public final class PoiChunk {
             }
 
             final long coordinateKey = CoordinateUtils.getChunkSectionKey(chunkX, sectionY, chunkZ);
-            // codecs are honestly such a fucking disaster. What the fuck is this trash?
-            final Codec<PoiSection> codec = PoiSection.codec(() -> {
-                poiManager.setDirty(coordinateKey);
-            });
 
             final CompoundTag section = sections.getCompound(key);
-            final DataResult<PoiSection> deserializeResult = codec.parse(registryOps, section);
+            final DataResult<PoiSection.Packed> deserializeResult = PoiSection.Packed.CODEC.parse(registryOps, section);
             final int finalSectionY = sectionY;
-            final PoiSection deserialized = deserializeResult.resultOrPartial((final String description) -> {
+            final PoiSection deserialized = deserializeResult.map(packed -> packed.unpack(() -> poiManager.setDirty(coordinateKey))).resultOrPartial((final String description) -> {
                 LOGGER.error("Failed to deserialize poi chunk for world: " + WorldUtil.getWorldName(world) + ", chunk: (" + chunkX + "," + finalSectionY + "," + chunkZ + "); description: " + description);
             }).orElse(null);
 

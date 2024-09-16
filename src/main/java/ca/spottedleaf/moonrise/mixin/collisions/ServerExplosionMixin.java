@@ -10,17 +10,17 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -33,33 +33,18 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-@Mixin(Explosion.class)
-abstract class ExplosionMixin {
+@Mixin(ServerExplosion.class)
+abstract class ServerExplosionMixin {
 
     @Shadow
     @Final
-    private Level level;
+    private ServerLevel level;
 
     @Shadow
     @Final
     private Entity source;
-
-    @Shadow
-    @Final
-    private double x;
-
-    @Shadow
-    @Final
-    private double y;
-
-    @Shadow
-    @Final
-    private double z;
 
     @Shadow
     @Final
@@ -68,10 +53,6 @@ abstract class ExplosionMixin {
     @Shadow
     @Final
     private float radius;
-
-    @Shadow
-    @Final
-    private ObjectArrayList<BlockPos> toBlow;
 
     @Shadow
     @Final
@@ -85,6 +66,19 @@ abstract class ExplosionMixin {
     @Final
     private DamageSource damageSource;
 
+
+    @Shadow
+    @Final
+    private Vec3 center;
+
+    @Shadow
+    protected abstract void createFire(final List<BlockPos> list);
+
+    @Shadow
+    protected abstract boolean interactsWithBlocks();
+
+    @Shadow
+    protected abstract void interactWithBlocks(final List<BlockPos> list);
 
     @Unique
     private static final double[] CACHED_RAYS;
@@ -349,7 +343,7 @@ abstract class ExplosionMixin {
      */
     @Overwrite
     public void explode() {
-        this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3(this.x, this.y, this.z));
+        this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
 
         this.blockCache = new Long2ObjectOpenHashMap<>();
 
@@ -363,14 +357,17 @@ abstract class ExplosionMixin {
         // use initial cache value that is most likely to be used: the source position
         final ExplosionBlockCache initialCache;
         {
-            final int blockX = Mth.floor(this.x);
-            final int blockY = Mth.floor(this.y);
-            final int blockZ = Mth.floor(this.z);
+            final int blockX = Mth.floor(this.center.x);
+            final int blockY = Mth.floor(this.center.y);
+            final int blockZ = Mth.floor(this.center.z);
 
             final long key = BlockPos.asLong(blockX, blockY, blockZ);
 
             initialCache = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
         }
+
+        // Vanilla: List<BlockPos> toBlow = this.calculateExplodedPositions();
+        Set<BlockPos> set = new HashSet<>();
 
         // only ~1/3rd of the loop iterations in vanilla will result in a ray, as it is iterating the perimeter of
         // a 16x16x16 cube
@@ -378,12 +375,13 @@ abstract class ExplosionMixin {
         // calculations in one go
         // additional aggressive caching of block retrieval is very significant, as at low power (i.e tnt) most
         // block retrievals are not unique
+        // TODO 1.21.2 check for any changes between Explosion <-> ServerExplosion "block collection"
         for (int ray = 0, len = CACHED_RAYS.length; ray < len;) {
             ExplosionBlockCache cachedBlock = initialCache;
 
-            double currX = this.x;
-            double currY = this.y;
-            double currZ = this.z;
+            double currX = this.center.x;
+            double currY = this.center.y;
+            double currZ = this.center.z;
 
             final double incX = CACHED_RAYS[ray];
             final double incY = CACHED_RAYS[ray + 1];
@@ -423,9 +421,7 @@ abstract class ExplosionMixin {
                     final boolean shouldExplode = this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power);
                     cachedBlock.shouldExplode = shouldExplode ? Boolean.TRUE : Boolean.FALSE;
                     if (shouldExplode) {
-                        if (this.fire || !cachedBlock.blockState.isAir()) {
-                            this.toBlow.add(cachedBlock.immutablePos);
-                        }
+                        set.add(cachedBlock.immutablePos);
                     }
                 }
 
@@ -436,19 +432,22 @@ abstract class ExplosionMixin {
             } while (power > 0.0f);
         }
 
+        final List<BlockPos> toBlow = new ObjectArrayList<>(set);
+
+        // Vanilla: this.hurtEntities();
         final double diameter = (double)this.radius * 2.0;
         final List<Entity> entities = this.level.getEntities(this.source,
                 new AABB(
-                        (double)Mth.floor(this.x - (diameter + 1.0)),
-                        (double)Mth.floor(this.y - (diameter + 1.0)),
-                        (double)Mth.floor(this.z - (diameter + 1.0)),
+                        (double)Mth.floor(this.center.x - (diameter + 1.0)),
+                        (double)Mth.floor(this.center.y - (diameter + 1.0)),
+                        (double)Mth.floor(this.center.z - (diameter + 1.0)),
 
-                        (double)Mth.floor(this.x + (diameter + 1.0)),
-                        (double)Mth.floor(this.y + (diameter + 1.0)),
-                        (double)Mth.floor(this.z + (diameter + 1.0))
+                        (double)Mth.floor(this.center.x + (diameter + 1.0)),
+                        (double)Mth.floor(this.center.y + (diameter + 1.0)),
+                        (double)Mth.floor(this.center.z + (diameter + 1.0))
                 )
         );
-        final Vec3 center = new Vec3(this.x, this.y, this.z);
+        final Vec3 center = new Vec3(this.center.x, this.center.y, this.center.z);
 
         final BlockPos.MutableBlockPos blockPos = new BlockPos.MutableBlockPos();
 
@@ -466,9 +465,9 @@ abstract class ExplosionMixin {
                 continue;
             }
 
-            double distX = entity.getX() - this.x;
-            double distY = (entity instanceof PrimedTnt ? entity.getY() : entity.getEyeY()) - this.y;
-            double distZ = entity.getZ() - this.z;
+            double distX = entity.getX() - this.center.x;
+            double distY = (entity instanceof PrimedTnt ? entity.getY() : entity.getEyeY()) - this.center.y;
+            double distZ = entity.getZ() - this.center.z;
             final double distMag = Math.sqrt(distX * distX + distY * distY + distZ * distZ);
 
             if (distMag == 0.0) {
@@ -514,5 +513,17 @@ abstract class ExplosionMixin {
         this.blockCache = null;
         this.chunkPosCache = null;
         this.chunkCache = null;
+
+        if (this.interactsWithBlocks()) {
+            ProfilerFiller profilerFiller = Profiler.get();
+            profilerFiller.push("explosion_blocks");
+            this.interactWithBlocks(toBlow);
+            profilerFiller.pop();
+        }
+
+        if (this.fire) {
+            // TODO 1.21.2 optimized createFire
+            this.createFire(toBlow);
+        }
     }
 }

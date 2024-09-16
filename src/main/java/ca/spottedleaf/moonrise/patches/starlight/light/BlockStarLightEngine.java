@@ -136,7 +136,7 @@ public final class BlockStarLightEngine extends StarLightEngine {
             return level;
         }
 
-        final int opacity = Math.max(1, centerState.getLightBlock(world, this.recalcCenterPos));
+        final int opacity = Math.max(1, centerState.getLightBlock());
         if (opacity >= 15) {
             return level;
         }
@@ -168,8 +168,8 @@ public final class BlockStarLightEngine extends StarLightEngine {
                 // we don't read the blockstate because most of the time this is false, so using the faster
                 // known transparency lookup results in a net win
                 this.recalcNeighbourPos.set(offX, offY, offZ);
-                final VoxelShape neighbourFace = neighbourState.getFaceOcclusionShape(lightAccess.getLevel(), this.recalcNeighbourPos, direction.opposite.nms);
-                final VoxelShape thisFace = conditionallyOpaqueState == null ? Shapes.empty() : conditionallyOpaqueState.getFaceOcclusionShape(lightAccess.getLevel(), this.recalcCenterPos, direction.nms);
+                final VoxelShape neighbourFace = neighbourState.getFaceOcclusionShape(direction.opposite.nms);
+                final VoxelShape thisFace = conditionallyOpaqueState == null ? Shapes.empty() : conditionallyOpaqueState.getFaceOcclusionShape(direction.nms);
                 if (Shapes.faceShapeOccludes(thisFace, neighbourFace)) {
                     // not allowed to propagate
                     continue;

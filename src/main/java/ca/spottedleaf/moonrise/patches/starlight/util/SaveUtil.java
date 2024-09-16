@@ -10,6 +10,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public final class SaveUtil {
     private static final String SKYLIGHT_STATE_TAG = "starlight.skylight_state";
     private static final String STARLIGHT_VERSION_TAG = "starlight.light_version";
 
-    public static void saveLightHook(final Level world, final ChunkAccess chunk, final CompoundTag nbt) {
+    public static void saveLightHook(final LevelHeightAccessor world, final ChunkAccess chunk, final CompoundTag nbt) {
         try {
             saveLightHookReal(world, chunk, nbt);
         } catch (final Throwable ex) {
@@ -38,7 +39,7 @@ public final class SaveUtil {
         }
     }
 
-    private static void saveLightHookReal(final Level world, final ChunkAccess chunk, final CompoundTag tag) {
+    private static void saveLightHookReal(final LevelHeightAccessor world, final ChunkAccess chunk, final CompoundTag tag) {
         if (tag == null) {
             return;
         }

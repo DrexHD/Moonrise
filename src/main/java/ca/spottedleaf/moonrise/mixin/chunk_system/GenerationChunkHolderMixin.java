@@ -41,6 +41,9 @@ abstract class GenerationChunkHolderMixin {
     @Shadow
     private AtomicInteger generationRefCount;
 
+    @Shadow
+    private volatile CompletableFuture<Void> generationSaveSyncFuture;
+
     /**
      * @reason Destroy old chunk system fields
      * @author Spottedleaf
@@ -56,6 +59,7 @@ abstract class GenerationChunkHolderMixin {
         this.futures = null;
         this.task = null;
         this.generationRefCount = null;
+        this.generationSaveSyncFuture = null;
     }
 
     /**
@@ -192,15 +196,6 @@ abstract class GenerationChunkHolderMixin {
      */
     @Overwrite
     public void decreaseGenerationRefCount() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @reason Chunk system is not built on futures anymore
-     * @author Spottedleaf
-     */
-    @Overwrite
-    public int getGenerationRefCount() {
         throw new UnsupportedOperationException();
     }
 

@@ -7,6 +7,7 @@ import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEnti
 import ca.spottedleaf.moonrise.patches.chunk_system.world.ChunkSystemEntityGetter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.FullChunkStatus;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -32,9 +33,6 @@ import java.util.function.Predicate;
 
 @Mixin(Level.class)
 abstract class LevelMixin implements ChunkSystemLevel, ChunkSystemEntityGetter, LevelAccessor, AutoCloseable {
-
-    @Shadow
-    public abstract ProfilerFiller getProfiler();
 
     @Shadow
     public abstract LevelChunk getChunk(int i, int j);
@@ -80,7 +78,7 @@ abstract class LevelMixin implements ChunkSystemLevel, ChunkSystemEntityGetter, 
     @Overwrite
     @Override
     public List<Entity> getEntities(final Entity entity, final AABB boundingBox, final Predicate<? super Entity> predicate) {
-        this.getProfiler().incrementCounter("getEntities");
+        Profiler.get().incrementCounter("getEntities");
         final List<Entity> ret = new ArrayList<>();
 
         ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entity, boundingBox, ret, predicate);
@@ -98,7 +96,7 @@ abstract class LevelMixin implements ChunkSystemLevel, ChunkSystemEntityGetter, 
     public <T extends Entity> void getEntities(final EntityTypeTest<Entity, T> entityTypeTest,
                                                final AABB boundingBox, final Predicate<? super T> predicate,
                                                final List<? super T> into, final int maxCount) {
-        this.getProfiler().incrementCounter("getEntities");
+        Profiler.get().incrementCounter("getEntities");
 
         if (entityTypeTest instanceof EntityType<T> byType) {
             if (maxCount != Integer.MAX_VALUE) {
@@ -171,7 +169,7 @@ abstract class LevelMixin implements ChunkSystemLevel, ChunkSystemEntityGetter, 
      */
     @Override
     public final <T extends Entity> List<T> getEntitiesOfClass(final Class<T> entityClass, final AABB boundingBox, final Predicate<? super T> predicate) {
-        this.getProfiler().incrementCounter("getEntities");
+        Profiler.get().incrementCounter("getEntities");
         final List<T> ret = new ArrayList<>();
 
         ((ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(entityClass, null, boundingBox, ret, predicate);
@@ -189,7 +187,7 @@ abstract class LevelMixin implements ChunkSystemLevel, ChunkSystemEntityGetter, 
      */
     @Override
     public final List<Entity> moonrise$getHardCollidingEntities(final Entity entity, final AABB box, final Predicate<? super Entity> predicate) {
-        this.getProfiler().incrementCounter("getEntities");
+        Profiler.get().incrementCounter("getEntities");
         final List<Entity> ret = new ArrayList<>();
 
         ((ChunkSystemLevel)this).moonrise$getEntityLookup().getHardCollidingEntities(entity, box, ret, predicate);

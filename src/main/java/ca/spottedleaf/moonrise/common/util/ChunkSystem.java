@@ -114,7 +114,7 @@ public final class ChunkSystem {
 
     public static void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
         ((ChunkSystemServerLevel)((ServerLevel)chunk.getLevel())).moonrise$getTickingChunks().add(
-                ((ChunkSystemLevelChunk)chunk).moonrise$getChunkAndHolder()
+                ((ChunkSystemLevelChunk)chunk).moonrise$getChunkAndHolder().chunk()
         );
         if (!((ChunkSystemLevelChunk)chunk).moonrise$isPostProcessingDone()) {
             chunk.postProcessGeneration();
@@ -125,7 +125,7 @@ public final class ChunkSystem {
 
     public static void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
         ((ChunkSystemServerLevel)((ServerLevel)chunk.getLevel())).moonrise$getTickingChunks().remove(
-                ((ChunkSystemLevelChunk)chunk).moonrise$getChunkAndHolder()
+                ((ChunkSystemLevelChunk)chunk).moonrise$getChunkAndHolder().chunk()
         );
     }
 

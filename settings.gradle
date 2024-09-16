@@ -37,7 +37,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("fabricApiLibs") {
-            from("net.fabricmc.fabric-api:fabric-api-catalog:0.103.0+1.21.1")
+            from("net.fabricmc.fabric-api:fabric-api-catalog:0.104.1+1.21.2")
         }
     }
 }
@@ -46,5 +46,5 @@ rootProject.name = "Moonrise"
 
 include("fabric")
 findProject(":fabric").name = "Moonrise-Fabric"
-include("neoforge")
-findProject(":neoforge").name = "Moonrise-NeoForge"
+//include("neoforge")
+//findProject(":neoforge").name = "Moonrise-NeoForge"

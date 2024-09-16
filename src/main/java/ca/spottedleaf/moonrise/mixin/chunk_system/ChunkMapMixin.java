@@ -14,21 +14,11 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StreamTagVisitor;
-import net.minecraft.server.level.ChunkGenerationTask;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.ChunkResult;
-import net.minecraft.server.level.ChunkTaskPriorityQueueSorter;
-import net.minecraft.server.level.ChunkTrackingView;
-import net.minecraft.server.level.GeneratingChunkMap;
-import net.minecraft.server.level.GenerationChunkHolder;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.*;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.Mth;
 import net.minecraft.util.StaticCache2D;
 import net.minecraft.util.thread.BlockableEventLoop;
-import net.minecraft.util.thread.ProcessorHandle;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -44,10 +34,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.storage.DimensionDataStorage;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -78,15 +65,6 @@ abstract class ChunkMapMixin extends ChunkStorage implements ChunkSystemChunkMap
     private volatile Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
 
     @Shadow
-    private ChunkTaskPriorityQueueSorter queueSorter;
-
-    @Shadow
-    private ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> worldgenMailbox;
-
-    @Shadow
-    private ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> mainThreadMailbox;
-
-    @Shadow
     private int serverViewDistance;
 
     @Shadow
@@ -97,6 +75,16 @@ abstract class ChunkMapMixin extends ChunkStorage implements ChunkSystemChunkMap
 
     @Shadow
     private Queue<Runnable> unloadQueue;
+
+    @Mutable
+    @Shadow
+    @Final
+    private ChunkTaskDispatcher worldgenTaskDispatcher;
+
+    @Mutable
+    @Shadow
+    @Final
+    private ChunkTaskDispatcher lightTaskDispatcher;
 
     public ChunkMapMixin(RegionStorageInfo regionStorageInfo, Path path, DataFixer dataFixer, boolean bl) {
         super(regionStorageInfo, path, dataFixer, bl);
@@ -128,10 +116,9 @@ abstract class ChunkMapMixin extends ChunkStorage implements ChunkSystemChunkMap
         this.updatingChunkMap = null;
         this.visibleChunkMap = null;
         this.pendingUnloads = null;
-        this.queueSorter = null;
-        this.worldgenMailbox = null;
-        this.mainThreadMailbox = null;
         this.pendingGenerationTasks = null;
+        this.worldgenTaskDispatcher = null;
+        this.lightTaskDispatcher = null;
         this.unloadQueue = null;
 
         // Dummy impl for mods that try to loadAsync directly
@@ -422,7 +409,7 @@ abstract class ChunkMapMixin extends ChunkStorage implements ChunkSystemChunkMap
      * @see NewChunkHolder#save(boolean)
      */
     @Overwrite
-    public boolean saveChunkIfNeeded(final ChunkHolder chunkHolder) {
+    public boolean saveChunkIfNeeded(final ChunkHolder chunkHolder, long l) {
         throw new UnsupportedOperationException();
     }
 
@@ -524,9 +511,9 @@ abstract class ChunkMapMixin extends ChunkStorage implements ChunkSystemChunkMap
     }
 
     @Override
-    public CompletableFuture<Void> write(final ChunkPos pos, final CompoundTag tag) {
+    public CompletableFuture<Void> write(final ChunkPos pos, final Supplier<CompoundTag> tag) {
         MoonriseRegionFileIO.scheduleSave(
-                this.level, pos.x, pos.z, tag,
+                this.level, pos.x, pos.z, tag.get(),
                 MoonriseRegionFileIO.RegionFileType.CHUNK_DATA);
         return null;
     }

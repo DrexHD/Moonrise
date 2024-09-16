@@ -34,6 +34,9 @@ abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState> implem
     @Shadow
     public abstract VoxelShape getCollisionShape(BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext);
 
+    @Shadow
+    private VoxelShape[] occlusionShapesByFace;
+
     protected BlockStateBaseMixin(Block object, Reference2ObjectArrayMap<Property<?>, Comparable<?>> reference2ObjectArrayMap, MapCodec<BlockState> mapCodec) {
         super(object, reference2ObjectArrayMap, mapCodec);
     }
@@ -74,7 +77,8 @@ abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState> implem
         }
         if (neighbours) {
             for (final Direction direction : DIRECTIONS_CACHED) {
-                initCaches(Shapes.getFaceShape(shape, direction), false);
+                // TODO 1.21.2
+//                initCaches(Shapes.getFaceShape(shape, direction), false);
                 initCaches(shape.getFaceShape(direction), false);
             }
         }
@@ -107,8 +111,9 @@ abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState> implem
             if (this.constantCollisionShape != null) {
                 initCaches(this.constantCollisionShape, true);
             }
-            if (this.cache.occlusionShapes != null) {
-                for (final VoxelShape shape : this.cache.occlusionShapes) {
+            // TODO 1.21.2 cache got moved
+            if (this.occlusionShapesByFace != null) {
+                for (final VoxelShape shape : this.occlusionShapesByFace) {
                     initCaches(shape, false);
                 }
             }

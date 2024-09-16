@@ -310,7 +310,7 @@ abstract class ServerChunkCacheMixin extends ChunkSource implements ChunkSystemS
      * @author Spottedleaf
      */
     @Inject(
-            method = "tickChunks",
+            method = "tickChunks(Lnet/minecraft/util/profiling/ProfilerFiller;JLjava/util/List;)V",
             at = @At(
                     value = "INVOKE",
                     shift = At.Shift.AFTER,
@@ -331,7 +331,7 @@ abstract class ServerChunkCacheMixin extends ChunkSource implements ChunkSystemS
      * @author Spottedleaf
      */
     @Redirect(
-            method = "tickChunks",
+            method = "method_61267",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/server/level/ServerLevel;isNaturalSpawningAllowed(Lnet/minecraft/world/level/ChunkPos;)Z"
@@ -347,7 +347,7 @@ abstract class ServerChunkCacheMixin extends ChunkSource implements ChunkSystemS
      * @author Spottedleaf
      */
     @Redirect(
-            method = "tickChunks",
+            method = "tickChunks(Lnet/minecraft/util/profiling/ProfilerFiller;JLjava/util/List;)V",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/server/level/ServerLevel;shouldTickBlocksAt(J)Z"

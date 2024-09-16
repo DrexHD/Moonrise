@@ -179,8 +179,10 @@ abstract class LevelLightEngineMixin implements LightEventListener, StarLightLig
      * @author Spottedleaf
      */
     @Overwrite
-    public boolean lightOnInSection(final SectionPos pos) {
-        final long key = CoordinateUtils.getChunkKey(pos.getX(), pos.getZ());
+    public boolean lightOnInColumn(final long sectionKey) {
+        final int chunkSectionX = CoordinateUtils.getChunkSectionX(sectionKey);
+        final int chunkSectionZ = CoordinateUtils.getChunkSectionZ(sectionKey);
+        final long key = CoordinateUtils.getChunkKey(chunkSectionX, chunkSectionZ);
         return (!this.lightEngine.hasBlockLight() || this.blockLightMap.get(key) != null) && (!this.lightEngine.hasSkyLight() || this.skyLightMap.get(key) != null);
     }
 

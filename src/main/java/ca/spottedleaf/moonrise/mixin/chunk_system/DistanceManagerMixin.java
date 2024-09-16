@@ -6,19 +6,10 @@ import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManage
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.ChunkTaskPriorityQueueSorter;
-import net.minecraft.server.level.DistanceManager;
-import net.minecraft.server.level.Ticket;
-import net.minecraft.server.level.TicketType;
-import net.minecraft.server.level.TickingTracker;
+import net.minecraft.server.level.*;
 import net.minecraft.util.SortedArraySet;
-import net.minecraft.util.thread.ProcessorHandle;
 import net.minecraft.world.level.ChunkPos;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -44,14 +35,11 @@ abstract class DistanceManagerMixin implements ChunkSystemDistanceManager {
     @Shadow
     Set<ChunkHolder> chunksToUpdateFutures;
 
+    // TODO 1.21.2 @Mutable vs accesswidener
+    @Mutable
     @Shadow
-    ChunkTaskPriorityQueueSorter ticketThrottler;
-
-    @Shadow
-    ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
-
-    @Shadow
-    ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
+    @Final
+    ThrottlingChunkTaskDispatcher ticketDispatcher;
 
     @Shadow
     LongSet ticketsToRelease;
@@ -86,9 +74,7 @@ abstract class DistanceManagerMixin implements ChunkSystemDistanceManager {
         this.tickingTicketsTracker = null;
         this.playerTicketManager = null;
         this.chunksToUpdateFutures = null;
-        this.ticketThrottler = null;
-        this.ticketThrottlerInput = null;
-        this.ticketThrottlerReleaser = null;
+        this.ticketDispatcher = null;
         this.ticketsToRelease = null;
         this.mainThreadExecutor = null;
         this.simulationDistance = -1;

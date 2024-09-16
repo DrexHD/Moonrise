@@ -14,12 +14,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 @Mixin(EnumProperty.class)
 abstract class EnumPropertyMixin<T extends Enum<T> & StringRepresentable> extends Property<T> implements PropertyAccess<T> {
 
     @Shadow
-    public abstract Collection<T> getPossibleValues();
+    public abstract List<T> getPossibleValues();
 
     @Unique
     private int[] idLookupTable;

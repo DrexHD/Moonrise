@@ -257,10 +257,11 @@ abstract class ShapesMixin {
      * @reason Route to use cache
      * @author Spottedleaf
      */
-    @Overwrite
-    public static VoxelShape getFaceShape(final VoxelShape shape, final Direction direction) {
-        return ((CollisionVoxelShape)shape).moonrise$getFaceShapeClamped(direction);
-    }
+    // TODO 1.21.2 check why this is gone
+//    @Overwrite
+//    public static VoxelShape getFaceShape(final VoxelShape shape, final Direction direction) {
+//        return ((CollisionVoxelShape)shape).moonrise$getFaceShapeClamped(direction);
+//    }
 
     @Unique
     private static boolean mergedMayOccludeBlock(final VoxelShape shape1, final VoxelShape shape2) {

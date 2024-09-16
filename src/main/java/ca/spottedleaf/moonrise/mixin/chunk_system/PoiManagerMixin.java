@@ -36,6 +36,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
 @Mixin(PoiManager.class)
 // Declare the generic type as Object so that our Overrides match the method signature of the superclass
 // Specifically, getOrCreate must return Object so that existing invokes do not route to the superclass
-public abstract class PoiManagerMixin extends SectionStorage<Object> implements ChunkSystemPoiManager {
+public abstract class PoiManagerMixin extends SectionStorage<Object, PoiSection.Packed> implements ChunkSystemPoiManager {
 
     @Shadow
     abstract boolean isVillageCenter(long l);
@@ -52,8 +53,8 @@ public abstract class PoiManagerMixin extends SectionStorage<Object> implements 
     @Shadow
     public abstract void checkConsistencyWithBlocks(SectionPos sectionPos, LevelChunkSection levelChunkSection);
 
-    public PoiManagerMixin(SimpleRegionStorage simpleRegionStorage, Function<Runnable, Codec<Object>> function, Function<Runnable, Object> function2, RegistryAccess registryAccess, ChunkIOErrorReporter chunkIOErrorReporter, LevelHeightAccessor levelHeightAccessor) {
-        super(simpleRegionStorage, function, function2, registryAccess, chunkIOErrorReporter, levelHeightAccessor);
+    public PoiManagerMixin(final SimpleRegionStorage simpleRegionStorage, final Codec<PoiSection.Packed> codec, final Function<Object, PoiSection.Packed> function, final BiFunction<PoiSection.Packed, Runnable, Object> biFunction, final Function<Runnable, Object> function2, final RegistryAccess registryAccess, final ChunkIOErrorReporter chunkIOErrorReporter, final LevelHeightAccessor levelHeightAccessor) {
+        super(simpleRegionStorage, codec, function, biFunction, function2, registryAccess, chunkIOErrorReporter, levelHeightAccessor);
     }
 
     @Unique
@@ -207,7 +208,7 @@ public abstract class PoiManagerMixin extends SectionStorage<Object> implements 
         final int chunkX = CoordinateUtils.getChunkX(coordinate);
         final int chunkZ = CoordinateUtils.getChunkZ(coordinate);
         TickThread.ensureTickThread(this.world, chunkX, chunkZ, "Unloading poi chunk off-main");
-        for (int section = this.levelHeightAccessor.getMinSection(); section < this.levelHeightAccessor.getMaxSection(); ++section) {
+        for (int section = this.levelHeightAccessor.getMinSectionY(); section <= this.levelHeightAccessor.getMaxSectionY(); ++section) {
             final long sectionPos = SectionPos.asLong(chunkX, section, chunkZ);
             this.updateDistanceTracking(sectionPos);
         }
@@ -218,7 +219,7 @@ public abstract class PoiManagerMixin extends SectionStorage<Object> implements 
         final int chunkX = poiChunk.chunkX;
         final int chunkZ = poiChunk.chunkZ;
         TickThread.ensureTickThread(this.world, chunkX, chunkZ, "Loading poi chunk off-main");
-        for (int sectionY = this.levelHeightAccessor.getMinSection(); sectionY < this.levelHeightAccessor.getMaxSection(); ++sectionY) {
+        for (int sectionY = this.levelHeightAccessor.getMinSectionY(); sectionY <= this.levelHeightAccessor.getMaxSectionY(); ++sectionY) {
             final PoiSection section = poiChunk.getSection(sectionY);
             if (section != null && !((ChunkSystemPoiSection)section).moonrise$isEmpty()) {
                 this.onSectionLoad(SectionPos.asLong(chunkX, sectionY, chunkZ));

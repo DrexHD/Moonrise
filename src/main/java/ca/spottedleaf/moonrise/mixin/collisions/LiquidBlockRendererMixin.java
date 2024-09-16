@@ -23,8 +23,9 @@ abstract class LiquidBlockRendererMixin {
      * @author Spottedleaf
      */
     @Overwrite
-    private static boolean isFaceOccludedByState(final BlockGetter world, final Direction direction, final float height,
-                                                 final BlockPos pos, final BlockState state) {
+    // TODO 1.21.2 check diff
+    private static boolean isFaceOccludedByState(final Direction direction, final float height,
+                                                 final BlockState state) {
         if (!state.canOcclude()) {
             return false;
         }
@@ -57,7 +58,7 @@ abstract class LiquidBlockRendererMixin {
             );
         }
 
-        final VoxelShape stateShape = ((CollisionVoxelShape)state.getOcclusionShape(world, pos)).moonrise$getFaceShapeClamped(direction.getOpposite());
+        final VoxelShape stateShape = ((CollisionVoxelShape)state.getOcclusionShape()).moonrise$getFaceShapeClamped(direction.getOpposite());
 
         if (stateShape.isEmpty()) {
             // cannot occlude

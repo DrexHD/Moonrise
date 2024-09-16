@@ -24,6 +24,7 @@ import ca.spottedleaf.moonrise.patches.chunk_system.level.poi.PoiChunk;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkLoadTask;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkProgressionTask;
 import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.GenericDataLoadTask;
+import ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -45,7 +46,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.ChunkSerializer;
+import net.minecraft.world.level.chunk.storage.SerializableChunkData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.lang.invoke.VarHandle;
@@ -1814,7 +1815,10 @@ public final class NewChunkHolder {
                 }
             }
 
-            final CompoundTag save = ChunkSerializer.write(this.world, chunk);
+            SerializableChunkData serializableChunkData = SerializableChunkData.copyOf(this.world, chunk);
+            final CompoundTag save = serializableChunkData.write();
+            SaveUtil.saveLightHook(this.world, chunk, save);
+
             PlatformHooks.get().chunkSyncSave(this.world, chunk, save);
 
             if (unloading) {

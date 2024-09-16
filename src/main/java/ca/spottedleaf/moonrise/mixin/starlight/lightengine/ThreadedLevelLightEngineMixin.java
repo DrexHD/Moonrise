@@ -10,13 +10,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
-import net.minecraft.server.level.ChunkTaskPriorityQueueSorter;
+import net.minecraft.server.level.ChunkTaskDispatcher;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.util.thread.ProcessorHandle;
-import net.minecraft.util.thread.ProcessorMailbox;
+import net.minecraft.util.thread.ConsecutiveExecutor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -25,10 +24,7 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -49,11 +45,15 @@ import java.util.function.Supplier;
 @Mixin(ThreadedLevelLightEngine.class)
 abstract class ThreadedLevelLightEngineMixin extends LevelLightEngine implements StarLightLightingProvider {
 
+    @Mutable
     @Shadow
-    private ProcessorMailbox<Runnable> taskMailbox;
+    @Final
+    private ChunkTaskDispatcher taskDispatcher;
 
+    @Mutable
     @Shadow
-    private ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> sorterMailbox;
+    @Final
+    private ConsecutiveExecutor consecutiveExecutor;
 
     public ThreadedLevelLightEngineMixin(final LightChunkGetter chunkProvider, final boolean hasBlockLight, final boolean hasSkyLight) {
         super(chunkProvider, hasBlockLight, hasSkyLight);
@@ -184,8 +184,8 @@ abstract class ThreadedLevelLightEngineMixin extends LevelLightEngine implements
             )
     )
     private void initHook(final CallbackInfo ci) {
-        this.taskMailbox = null;
-        this.sorterMailbox = null;
+        this.taskDispatcher = null;
+        this.consecutiveExecutor = null;
     }
 
     /**

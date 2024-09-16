@@ -26,6 +26,8 @@ dependencies {
     api("org.yaml:snakeyaml:${rootProject.snakeyaml_version}")
 
     modImplementation "me.shedaniel.cloth:cloth-config:${rootProject.cloth_version}"
+    // Use most recent fabric api module versions during snapshot development
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 File awFile = file("src/main/resources/moonrise.accesswidener")
